@@ -1,0 +1,8 @@
+name: AutoCompleteAPI
+main: AndreasHGK\AutoCompleteAPI\AutoCompleteAPI
+version: 0.0.1
+api: 3.8.0
+load: STARTUP
+author: AndreasHGK
+description: Set up command autocompletion for your commands
+website: http://hgk.me/
