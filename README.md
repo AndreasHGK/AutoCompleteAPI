@@ -81,7 +81,7 @@ if(isset($AutoCompleteAPI)){
 Now you have set up simple parameters for your command!
 
 ### Magic parameters
-There are to types of magic parameters. **MAGIC_TYPE_ITEM** and **MAGIC_TYPE_BLOCK**.
+There are two types of magic parameters. **MAGIC_TYPE_ITEM** and **MAGIC_TYPE_BLOCK**.
 If you use these, all types of block/items will show up with icons in a list. Adding them is simple.
 
 In the code you had before, you can do this to add a magic parameter.

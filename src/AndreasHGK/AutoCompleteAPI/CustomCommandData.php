@@ -54,7 +54,10 @@ class CustomCommandData {
         $this->addParameter($x, $y, $param);
     }
 
-    public function arrayParameter(int $x, int $y, string $name, array $contents, bool $optional = false, string $typeName = "array") : void{
+    public function arrayParameter(int $x, int $y, string $name, array $contents, bool $optional = false, string $typeName = null) : void{
+        if($typeName === null){
+            $typeName = (string)mt_rand(); //somehow, if the typeName of parameters are the same, the game will only use the values of the last registered parameter with that name. This is a workaround.
+        }
         $param = new ArrayParameter($name, $optional, $typeName, $contents);
         $this->addParameter($x, $y, $param);
     }
