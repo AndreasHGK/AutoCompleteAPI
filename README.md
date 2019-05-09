@@ -9,7 +9,7 @@ With this API you can do it.
 This is a quick documentation on how you can add autocompletion and parameters to a command.
 The command does not need to be from your plugin. You can do all of the following things in onEnable()
 
-### Normal Parameters
+#### Normal Parameters
 This will be an example for /teleport
 
 First of all, you want to get the main plugin class. You could do `AutoCompleteAPI::getInstance()`,
@@ -80,7 +80,7 @@ if(isset($AutoCompleteAPI)){
 ```
 Now you have set up simple parameters for your command!
 
-### Magic parameters
+#### Magic parameters
 There are two types of magic parameters. **MAGIC_TYPE_ITEM** and **MAGIC_TYPE_BLOCK**.
 If you use these, all types of block/items will show up with icons in a list. Adding them is simple.
 
@@ -92,12 +92,12 @@ The first 0 is the X-value, and the second one the Y-value. They do the same thi
 For the type however, you need to use one of the MAGIC_TYPES in the constants in the CustomCommandData class.
 the fourth value is the name of the parameter and the fifth value is the optional value.
 
-### Array parameters
+#### Array parameters
 Lastly I'll show how you can add array parameters.
 
 In the same place, add this:
 ```PHP
-$customCommandData->arrayParameter(0, 0, "Array", ["Value1", "Value2"], false, "ArrayType");
+$customCommandData->arrayParameter(0, 0, "Array", ["Value1", "Value2"], false);
 ```
 The first 2 values still do the same. The third value is the name of the parameter.
 The fourth value is the contents of the array. Here you should list every value that needs to be in the array.

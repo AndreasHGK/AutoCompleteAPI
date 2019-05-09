@@ -25,8 +25,6 @@ class AutoCompleteAPI extends PluginBase implements Listener {
     /** @var CustomCommandData[] */
     protected $commands = [];
 
-    protected $lastPacket = null;
-
     public static function getInstance() : ?AutoCompleteAPI {
         return self::$instance;
     }
@@ -63,14 +61,21 @@ class AutoCompleteAPI extends PluginBase implements Listener {
     }
 
     public function onPacket(DataPacketSendEvent $ev){
-        if ($ev->getPacket() !== $this->lastPacket && $ev->getPacket() instanceof AvailableCommandsPacket){
-            $this->sendCommandData($ev->getPlayer());
+        $pk = $ev->getPacket();
+        if ($pk instanceof AvailableCommandsPacket){
+            if(!$pk instanceof CustomCommandPacket){
+                $ev->setCancelled();
+                $this->sendCommandData($ev->getPlayer()); //allows anyone to refresh the packet without having to worry about this plugin being installed
+            }
         }
     }
 
     public function sendCommandData(Player $player){
-        $pk = new AvailableCommandsPacket();
+        $pk = new CustomCommandPacket();
         foreach ($this->commands as $name => $commandData){
+            if (!$commandData->getCommand()->testPermissionSilent($player)){
+                continue;
+            }
             $data = new CommandData();
             $data->commandName = strtolower($commandData->getName());
             $data->commandDescription = $this->getServer()->getLanguage()->translateString($commandData->getCommand()->getDescription());
@@ -190,7 +195,6 @@ class AutoCompleteAPI extends PluginBase implements Listener {
             $pk->commandData[$command->getName()] = $data;
         }
 
-        $this->lastPacket = $pk;
         $player->dataPacket($pk);
     }
 
