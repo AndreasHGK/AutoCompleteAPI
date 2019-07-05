@@ -15,65 +15,91 @@ use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\Command;
 
-class AutoCompleteAPI extends PluginBase implements Listener {
+class AutoCompleteAPI extends PluginBase implements Listener
+{
 
     /** @var AutoCompleteAPI */
     protected static $instance;
 
+    /**
+     * @var int
+     */
     protected static $enumIndex = 1;
 
     /** @var CustomCommandData[] */
     protected $commands = [];
 
-    public static function getInstance() : ?AutoCompleteAPI {
+    /**
+     * @return AutoCompleteAPI
+     */
+    public static function getInstance(): AutoCompleteAPI
+    {
         return self::$instance;
     }
 
-    public function registerCommandData(Command $command, bool $overwrite = false) : ?CustomCommandData{
+    /**
+     * @param Command $command
+     * @param bool $overwrite
+     * @return CustomCommandData|null
+     */
+    public function registerCommandData(Command $command, bool $overwrite = false): ?CustomCommandData
+    {
         $data = new CustomCommandData($command);
         $name = $command->getName();
-        if(isset($this->commands[$name]) && $overwrite){
+        if (isset($this->commands[$name]) && $overwrite) {
             $this->commands[$name] = $data;
-        }elseif(isset($this->commands[$name]) && !$overwrite){
+        } elseif (isset($this->commands[$name]) && !$overwrite) {
             return null;
-        }else{
+        } else {
             $this->commands[$name] = $data;
         }
         return $data;
     }
 
-    public function getCommandData(string $name) : ?CustomCommandData{
+    /**
+     * @param string $name
+     * @return CustomCommandData|null
+     */
+    public function getCommandData(string $name): ?CustomCommandData
+    {
         return $this->commands[$name] ?? null;
     }
 
 
-
-    public function onLoad() : void {
+    public function onLoad(): void
+    {
         self::$instance = $this;
     }
 
-    public function onEnable() : void{
-	    $this->getServer()->getPluginManager()->registerEvents($this, $this);
-	}
+    public function onEnable(): void
+    {
+        $this->getServer()->getPluginManager()->registerEvents($this, $this);
+    }
 
-    public function onJoin(PlayerJoinEvent $ev) : void{
+    public function onJoin(PlayerJoinEvent $ev): void
+    {
         $this->sendCommandData($ev->getPlayer());
     }
 
-    public function onPacket(DataPacketSendEvent $ev){
+    public function onPacket(DataPacketSendEvent $ev)
+    {
         $pk = $ev->getPacket();
-        if ($pk instanceof AvailableCommandsPacket){
-            if(!$pk instanceof CustomCommandPacket){
+        if ($pk instanceof AvailableCommandsPacket) {
+            if (!$pk instanceof CustomCommandPacket) {
                 $ev->setCancelled();
                 $this->sendCommandData($ev->getPlayer()); //allows anyone to refresh the packet without having to worry about this plugin being installed
             }
         }
     }
 
-    public function sendCommandData(Player $player){
+    /**
+     * @param Player $player
+     */
+    public function sendCommandData(Player $player): void
+    {
         $pk = new CustomCommandPacket();
-        foreach ($this->commands as $name => $commandData){
-            if (!$commandData->getCommand()->testPermissionSilent($player)){
+        foreach ($this->commands as $name => $commandData) {
+            if (!$commandData->getCommand()->testPermissionSilent($player)) {
                 continue;
             }
             $data = new CommandData();
@@ -83,8 +109,8 @@ class AutoCompleteAPI extends PluginBase implements Listener {
             $data->permission = 0;
 
             $aliases = $commandData->getCommand()->getAliases();
-            if(!empty($aliases)){
-                if(!in_array($data->commandName, $aliases, true)){
+            if (!empty($aliases)) {
+                if (!in_array($data->commandName, $aliases, true)) {
                     //work around a client bug which makes the original name not show when aliases are used
                     $aliases[] = $data->commandName;
                 }
@@ -93,28 +119,28 @@ class AutoCompleteAPI extends PluginBase implements Listener {
                 $data->aliases->enumValues = $aliases;
             }
 
-            foreach ($commandData->getParameters() as $x => $y){
-                foreach ($y as $key => $customParameter){
+            foreach ($commandData->getParameters() as $x => $y) {
+                foreach ($y as $key => $customParameter) {
                     $parameter = new CommandParameter();
                     $parameter->paramName = $customParameter->getName();
                     $parameter->isOptional = $customParameter->isOptional();
-                    if($customParameter instanceof MagicParameter){
+                    if ($customParameter instanceof MagicParameter) {
                         $parameter->paramType = AvailableCommandsPacket::ARG_FLAG_ENUM | AvailableCommandsPacket::ARG_FLAG_VALID | self::$enumIndex;
                         self::$enumIndex++;
                         $parameter->enum = new CommandEnum();
                         $parameter->enum->enumName = $customParameter->getTypeName();
-                        if($customParameter instanceof ArrayParameter){
-                            foreach($customParameter->getContents() as $content){
+                        if ($customParameter instanceof ArrayParameter) {
+                            foreach ($customParameter->getContents() as $content) {
                                 array_push($pk->enumValues, $content);
                             }
                             $parameter->enum->enumValues = $customParameter->getContents();
-                        }elseif($customParameter instanceof SingleParameter){
+                        } elseif ($customParameter instanceof SingleParameter) {
                             array_push($pk->enumValues, $customParameter->getText());
                             $parameter->enum->enumValues = [$customParameter->getText()];
                         }
                         array_push($pk->enums, $parameter->enum);
-                    }else{
-                        switch ($customParameter->getType()){
+                    } else {
+                        switch ($customParameter->getType()) {
                             case 0:
                                 $type = 0x01;
                                 break;
@@ -167,8 +193,8 @@ class AutoCompleteAPI extends PluginBase implements Listener {
             $pk->commandData[$commandData->getName()] = $data;
         }
 
-        foreach($this->getServer()->getCommandMap()->getCommands() as $name => $command){
-            if(isset($pk->commandData[$command->getName()]) or $command->getName() === "help" or !$command->testPermissionSilent($player)){
+        foreach ($this->getServer()->getCommandMap()->getCommands() as $name => $command) {
+            if (isset($pk->commandData[$command->getName()]) or $command->getName() === "help" or !$command->testPermissionSilent($player)) {
                 continue;
             }
 
@@ -185,8 +211,8 @@ class AutoCompleteAPI extends PluginBase implements Listener {
             $data->overloads[0][0] = $parameter;
 
             $aliases = $command->getAliases();
-            if(!empty($aliases)){
-                if(!in_array($data->commandName, $aliases, true)){
+            if (!empty($aliases)) {
+                if (!in_array($data->commandName, $aliases, true)) {
                     //work around a client bug which makes the original name not show when aliases are used
                     $aliases[] = $data->commandName;
                 }
@@ -201,12 +227,10 @@ class AutoCompleteAPI extends PluginBase implements Listener {
         $player->dataPacket($pk);
     }
 
-    public function broadcastCommandData() : void{
-	    foreach ($this->getServer()->getOnlinePlayers() as $player){
-	        $this->sendCommandData($player);
+    public function broadcastCommandData(): void
+    {
+        foreach ($this->getServer()->getOnlinePlayers() as $player) {
+            $this->sendCommandData($player);
         }
     }
-
-	public function onDisable() : void{
-	}
 }

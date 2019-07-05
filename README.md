@@ -92,6 +92,15 @@ The first 0 is the X-value, and the second one the Y-value. They do the same thi
 For the type however, you need to use one of the MAGIC_TYPES in the constants in the CustomCommandData class.
 the fourth value is the name of the parameter and the fifth value is the optional value.
 
+#### Single parameters
+If you want to add subcommands, using SinglParameters is the way to go.
+
+Replace the `normalParameter` function with `singleParameter`
+```PHP
+$customCommandData->singleParameter(0, 0, "name", false);
+```
+The only value that's new here is the "name" value. Replace this with the name of your subcommand.
+
 #### Array parameters
 Lastly I'll show how you can add array parameters.
 
