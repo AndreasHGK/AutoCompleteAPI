@@ -87,7 +87,7 @@ class AutoCompleteAPI extends PluginBase implements Listener
         if ($pk instanceof AvailableCommandsPacket) {
             if (!$pk instanceof CustomCommandPacket) {
                 $ev->setCancelled();
-                $this->sendCommandData($ev->getPlayer()); //allows anyone to refresh the packet without having to worry about this plugin being installed
+                $this->sendUpdatedCommandData($ev->getPlayer(), $pk);
             }
         }
     }
@@ -95,8 +95,132 @@ class AutoCompleteAPI extends PluginBase implements Listener
     /**
      * @param Player $player
      */
+    public function sendUpdatedCommandData(Player $player, AvailableCommandsPacket $packet): void
+    {
+        $player->dataPacket($this->getUpdatedCommandData($player, $packet));
+    }
+
+    public function getUpdatedCommandData(Player $player, AvailableCommandsPacket $packet): CustomCommandPacket
+    {
+        $pk = new CustomCommandPacket();
+        $pk->enumValues = $packet->enumValues;
+        $pk->enums = $packet->enums;
+        $pk->commandData = $packet->commandData;
+        $pk->offset = $packet->offset;
+        $pk->postfixes = $packet->postfixes;
+        $pk->softEnums = $packet->softEnums;
+        $pk->buffer = $packet->buffer;
+        $pk->isEncoded = $packet->isEncoded;
+        $pk->recipientSubId = $packet->recipientSubId;
+        $pk->senderSubId = $packet->senderSubId;
+
+        foreach ($this->commands as $name => $commandData) {
+            if (!$commandData->getCommand()->testPermissionSilent($player)) {
+                continue;
+            }
+            $data = new CommandData();
+            $data->commandName = strtolower($commandData->getName());
+            $data->commandDescription = $this->getServer()->getLanguage()->translateString($commandData->getCommand()->getDescription());
+            $data->flags = 0;
+            $data->permission = 0;
+
+            $aliases = $commandData->getCommand()->getAliases();
+            if (!empty($aliases)) {
+                if (!in_array($data->commandName, $aliases, true)) {
+                    //work around a client bug which makes the original name not show when aliases are used
+                    $aliases[] = $data->commandName;
+                }
+                $data->aliases = new CommandEnum();
+                $data->aliases->enumName = ucfirst($commandData->getName()) . "Aliases";
+                $data->aliases->enumValues = $aliases;
+            }
+
+            foreach ($commandData->getParameters() as $x => $y) {
+                foreach ($y as $key => $customParameter) {
+                    $parameter = new CommandParameter();
+                    $parameter->paramName = $customParameter->getName();
+                    $parameter->isOptional = $customParameter->isOptional();
+                    if ($customParameter instanceof MagicParameter) {
+                        $parameter->paramType = AvailableCommandsPacket::ARG_FLAG_ENUM | AvailableCommandsPacket::ARG_FLAG_VALID | self::$enumIndex;
+                        self::$enumIndex++;
+                        $parameter->enum = new CommandEnum();
+                        $parameter->enum->enumName = $customParameter->getTypeName();
+                        if ($customParameter instanceof ArrayParameter) {
+                            foreach ($customParameter->getContents() as $content) {
+                                array_push($pk->enumValues, $content);
+                            }
+                            $parameter->enum->enumValues = $customParameter->getContents();
+                        } elseif ($customParameter instanceof SingleParameter) {
+                            array_push($pk->enumValues, $customParameter->getText());
+                            $parameter->enum->enumValues = [$customParameter->getText()];
+                        }
+                        array_push($pk->enums, $parameter->enum);
+                    } else {
+                        switch ($customParameter->getType()) {
+                            case 0:
+                                $type = 0x01;
+                                break;
+                            case 1:
+                                $type = 0x02;
+                                break;
+                            case 2:
+                                $type = 0x03;
+                                break;
+                            case 3:
+                                $type = 0x04;
+                                break;
+                            case 4:
+                                $type = 0x05;
+                                break;
+                            case 5:
+                                $type = 0x06;
+                                break;
+                            case 6:
+                                $type = 0x0e;
+                                break;
+                            case 7:
+                                $type = 0x1b;
+                                break;
+                            case 8:
+                                $type = 0x1d;
+                                break;
+                            case 9:
+                                $type = 0x20;
+                                break;
+                            case 10:
+                                $type = 0x22;
+                                break;
+                            case 11:
+                                $type = 0x25;
+                                break;
+                            case 12:
+                                $type = 0x2c;
+                                break;
+                            default:
+                                throw new \TypeError("Unknown parameter type");
+                                break;
+                        }
+                        $parameter->paramType = AvailableCommandsPacket::ARG_FLAG_VALID | $type;
+                    }
+                    $data->overloads[$x][$key] = $parameter;
+                }
+            }
+
+            $pk->commandData[$commandData->getName()] = $data;
+        }
+
+        return $pk;
+    }
+
+    /**
+     * @param Player $player
+     */
     public function sendCommandData(Player $player): void
     {
+        $player->dataPacket($this->getCommandDataPacket($player));
+    }
+
+    public function getCommandDataPacket(Player $player) : CustomCommandPacket{
         $pk = new CustomCommandPacket();
         foreach ($this->commands as $name => $commandData) {
             if (!$commandData->getCommand()->testPermissionSilent($player)) {
@@ -223,8 +347,7 @@ class AutoCompleteAPI extends PluginBase implements Listener
 
             $pk->commandData[$command->getName()] = $data;
         }
-
-        $player->dataPacket($pk);
+        return $pk;
     }
 
     public function broadcastCommandData(): void
