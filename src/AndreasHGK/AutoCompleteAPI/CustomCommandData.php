@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AndreasHGK\AutoCompleteAPI;
 
-use Composer\Command\SelfUpdateCommand;
 use pocketmine\command\Command;
 
 class CustomCommandData {
@@ -59,6 +58,14 @@ class CustomCommandData {
             $typeName = (string)mt_rand(); //somehow, if the typeName of parameters are the same, the game will only use the values of the last registered parameter with that name. This is a workaround.
         }
         $param = new ArrayParameter($name, $optional, $typeName, $contents);
+        $this->addParameter($x, $y, $param);
+    }
+
+    public function singleParameter(int $x, int $y, string $name, string $text, bool $optional = false, string $typeName = null) : void{
+        if($typeName === null){
+            $typeName = (string)mt_rand(); //somehow, if the typeName of parameters are the same, the game will only use the values of the last registered parameter with that name. This is a workaround.
+        }
+        $param = new SingleParameter($name, $optional, $typeName, $text);
         $this->addParameter($x, $y, $param);
     }
 

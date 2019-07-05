@@ -108,6 +108,9 @@ class AutoCompleteAPI extends PluginBase implements Listener {
                                 array_push($pk->enumValues, $content);
                             }
                             $parameter->enum->enumValues = $customParameter->getContents();
+                        }elseif($customParameter instanceof SingleParameter){
+                            array_push($pk->enumValues, $customParameter->getText());
+                            $parameter->enum->enumValues = [$customParameter->getText()];
                         }
                         array_push($pk->enums, $parameter->enum);
                     }else{
